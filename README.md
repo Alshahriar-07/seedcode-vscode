@@ -1,188 +1,147 @@
-# SeedCode for Visual Studio Code
+# SeedCode CLI
 
-<p align="center">
-  <img src="assets/logo.png" alt="SeedCode Logo" width="128" height="128" />
-</p>
+A VS Code extension for [SeedCode CLI](https://github.com/Alshahriar-07/seedcode-cli), a terminal-based AI coding agent. It runs the CLI binary you already have in a pseudo-terminal and renders it with xterm.js, so you can use the agent without switching to an external terminal window.
 
-<p align="center">
-  <strong>Your AI coding agent, built for the terminal. Plant ideas. Grow code.</strong>
-</p>
+The interface has two hosts:
 
-<p align="center">
-  <a href="#features">Features</a> •
-  <a href="#requirements">Requirements</a> •
-  <a href="#supported-platforms">Supported Platforms</a> •
-  <a href="#installation">Installation</a> •
-  <a href="#usage">Usage</a> •
-  <a href="#troubleshooting">Troubleshooting</a> •
-  <a href="#development">Development</a>
-</p>
+- a SeedCode CLI icon in the Activity Bar that opens the sidebar;
+- a `SeedCode CLI: Open in Editor Tab` command that opens the same interface as an editor tab.
 
----
-
-## Overview
-
-**SeedCode** integrates the powerful, terminal-based AI coding assistant directly into Visual Studio Code. Similar to modern developer workflows in OpenCode and Kilo Code, the SeedCode extension provides a dedicated Activity Bar container, intelligent CLI detection, automated installation workflows, and single-click access inside the VS Code Integrated Terminal.
-
-Rather than locking your AI experience into an artificial or restricted chat box, SeedCode brings the full, uncompromised power of the native terminal agent directly into your editor—preserving ANSI formatting, interactive menus, real-time diffs, and your chosen AI provider configurations.
-
----
-
-## Features
-
-- 🌿 **Dedicated Activity Bar Integration**: A native icon in the VS Code Activity Bar with a clean, theme-aware sidebar interface.
-- ⚡ **One-Click CLI Launch**: Spawns or focuses the interactive SeedCode terminal with a single click.
-- 🛡️ **Intelligent Terminal Management**:
-  - Automatically targets the active workspace or project folder.
-  - Reuses existing active sessions without opening duplicate terminals.
-  - Preserves full interactive input, ANSI colors, and keyboard shortcuts.
-- 🔍 **Automated CLI Detection**:
-  - Automatically identifies whether `seedcode` is installed and operational.
-  - Detects PATH executables and well-known installation paths on Windows and Linux.
-- 🚀 **Built-In CLI Installer**:
-  - Detects your operating system automatically.
-  - Securely prompts for confirmation before running official installation scripts.
-  - Shows live installation progress in the integrated terminal.
-  - Automatically verifies and launches the CLI once installation finishes.
-- 🎨 **Adaptive Theme Support**: Designed from the ground up using official VS Code design tokens (`var(--vscode-*)`) to look seamless across Light, Dark, High Contrast, and custom themes.
-- 🔄 **Quick Session Control**: Easily restart CLI sessions, recheck environment health, or view active logs through the Command Palette or View Header actions.
-
----
+Both hosts render the same markup and talk to the same PTY session, so the CLI starts once and the second surface attaches to the running session.
 
 ## Screenshots
 
-<!-- SeedCode VS Code Interface Screenshot Placeholder -->
-<p align="center">
-  <img src="assets/logo.png" alt="SeedCode Preview" width="380" />
-  <br />
-  <em>SeedCode Activity Bar Sidebar & Integrated Terminal Session</em>
-</p>
+No screenshots are committed to this repository yet. The Activity Bar sidebar and the editor tab look the same apart from the surrounding VS Code chrome.
 
----
+## Features
 
-## Supported Platforms
-
-| Platform | Support Status | Automated Installation Script |
-| :--- | :---: | :--- |
-| **Windows 10 / 11** | Supported | `irm https://seedcode-cli.vercel.app/install.ps1 \| iex` (PowerShell) |
-| **Linux (Ubuntu, Debian, Fedora, Arch, etc.)** | Supported | `curl -fsSL https://seedcode-cli.vercel.app/install.sh \| bash` (Bash) |
-| **macOS** | Manual CLI Setup | Manual terminal installation via SeedCode documentation |
-
----
+- **Dedicated Activity Bar sidebar.** The extension contributes its own `seedcode` view container, so the icon sits next to Explorer, Search, Source Control, Run and Debug, and Extensions. It is not added to the Explorer view.
+- **Open in Editor Tab.** `SeedCode CLI: Open in Editor Tab` (command id `seedcode.openInEditor`) creates a webview panel in the editor area titled `SeedCode CLI`, with the SeedCode logo as the tab icon. Running the command again reveals the existing tab instead of opening a second one. The action uses the original colored SeedCode logo with its background (`assets/seedcode-colored-with-bg.svg`), which is readable on both light and dark themes. The Activity Bar icon stays monochrome (`assets/seedcode.svg`) because VS Code expects theme-adaptive icons there. The same action is also available from the sidebar title bar, from the icon button in the sidebar toolbar, and from the SeedCode CLI icon in the editor title toolbar.
+- **SeedCode CLI integration.** The extension does not reimplement the agent. It executes the installed `seedcode` executable inside a PTY, so prompts, keyboard shortcuts and slash commands behave as they do in a normal terminal.
+- **CLI installation and detection.** On startup the extension checks for the executable. If it is missing, the sidebar and editor tab show a setup screen with a one-click installer for Windows and Linux. A recheck command is available when the executable is installed later.
+- **Workspace-based execution.** The CLI runs in the active workspace folder, or in the folder of the active editor when several folders are open. Without a workspace it runs in the user's home directory.
 
 ## Requirements
 
-- **Visual Studio Code**: `v1.80.0` or higher.
-- **SeedCode CLI**: If not already present, you can install it with one click directly inside the extension sidebar.
-
----
+- Visual Studio Code 1.80 or newer.
+- SeedCode CLI. If it is not installed, use the setup screen or one of the install commands:
+  - Windows: `irm https://seedcode-cli.vercel.app/install.ps1 | iex`
+  - Linux: `curl -fsSL https://seedcode-cli.vercel.app/install.sh | bash`
+  - macOS: install the CLI manually and make sure it is on `PATH`.
+- The extension bundles `node-pty`, which is a native module. A VS Code version that matches your platform is enough for normal use; for development from source see the build section.
 
 ## Installation
 
-### Method 1: Install from VSIX (Recommended for Offline / Manual Setup)
+### From a VSIX file
 
-1. Download the latest `seedcode-1.0.0.vsix` package.
-2. In VS Code, open the Extensions view (`Ctrl+Shift+X` or `Cmd+Shift+X`).
-3. Click the **`...`** (More Actions) menu in the top-right corner of the Extensions panel.
-4. Select **Install from VSIX...**
-5. Choose the downloaded `seedcode-1.0.0.vsix` file.
-6. The SeedCode seedling icon will immediately appear in your Activity Bar!
+1. Open the Extensions view (`Ctrl+Shift+X`).
+2. Open the `...` menu and choose **Install from VSIX...**.
+3. Select `seedcode-vscode-2.1.4.vsix`.
+4. The SeedCode CLI icon appears in the Activity Bar.
 
-Alternatively, install via terminal:
+From a terminal:
+
 ```bash
-code --install-extension seedcode-1.0.0.vsix
+code --install-extension seedcode-vscode-2.1.4.vsix
 ```
 
----
+Reload the window if the icon does not appear immediately after installing.
 
-## Usage
+## Getting Started
 
-### 1. Launching SeedCode
-1. Click the **SeedCode** seedling icon in the Activity Bar on the left side of VS Code.
-2. If SeedCode CLI is installed:
-   - Click **Launch SeedCode CLI** or press `Ctrl+Shift+P` → `SeedCode: Launch CLI`.
-   - The Integrated Terminal named `SeedCode CLI` will open in your current project folder.
-3. If SeedCode CLI is not installed:
-   - The sidebar displays a welcome screen indicating the CLI is not yet installed.
-   - Click **Install SeedCode** to start the guided installation.
+1. Click the SeedCode CLI icon in the Activity Bar. The sidebar opens.
+2. If the CLI is not installed, the sidebar shows an installer card. The installer asks for confirmation before running the script and detects the CLI once it finishes.
+3. When the CLI is detected, the terminal attaches automatically. Type your prompt or a slash command such as `/help`, `/provider`, `/model` or `/doctor`.
+4. Use the toolbar for the session actions:
+   - The SeedCode icon button opens the same interface as an editor tab.
+   - **Clear** clears the terminal buffer.
+   - **Restart** stops the current CLI process and starts a new one.
+5. To open the interface from the editor title toolbar, click the SeedCode CLI icon that sits with the other editor actions while any file is open.
+6. To close the editor tab, close it like any other tab. The sidebar keeps working; run the command again to reopen the tab.
 
-### 2. Quick Terminal Commands
-Inside the SeedCode CLI terminal, you can interact with your AI assistant using:
-- `/help` — Display available commands and hotkeys.
-- `/provider` — Select or configure AI providers (OpenAI, Anthropic, Gemini, Groq, Ollama, etc.).
-- `/model` — Switch AI models on the fly.
-- `/doctor` — Run environment and configuration diagnostics.
-- `/settings` — Customize assistant behavior and permissions.
+## Available Commands
 
-### 3. VS Code Command Palette Actions
-Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and type `SeedCode`:
-- **`SeedCode: Open`**: Focuses the SeedCode Activity Bar view.
-- **`SeedCode: Launch CLI`**: Starts or focuses the SeedCode CLI terminal session.
-- **`SeedCode: Install CLI`**: Initiates the automated CLI installer for your platform.
-- **`SeedCode: Check Installation`**: Forces a fresh scan for the SeedCode CLI binary.
-- **`SeedCode: Restart CLI`**: Closes any existing SeedCode terminal and creates a fresh session.
-- **`SeedCode: Open Terminal`**: Brings the active SeedCode terminal to the foreground.
+All commands are in the `SeedCode CLI` category in the Command Palette.
 
----
+| Command ID | Palette title | What it does |
+| --- | --- | --- |
+| `seedcode.open` | SeedCode CLI: Open in Sidebar | Focuses the SeedCode CLI sidebar. |
+| `seedcode.openInEditor` | SeedCode CLI: Open in Editor Tab | Opens or reveals the SeedCode CLI editor tab. |
+| `seedcode.launch` | SeedCode CLI: Launch CLI | Focuses the sidebar and starts the CLI if it is not running. |
+| `seedcode.install` | SeedCode CLI: Install CLI | Runs the official installer, after a confirmation prompt. |
+| `seedcode.checkInstallation` | SeedCode CLI: Check Installation | Re-scans the system for the CLI and reports the result. |
+| `seedcode.restart` | SeedCode CLI: Restart CLI | Restarts the CLI process. |
+| `seedcode.openTerminal` | SeedCode CLI: Focus Sidebar | Focuses the sidebar, same as `seedcode.open`. |
 
-## How Automatic CLI Installation Works
+`seedcode.open`, `seedcode.launch`, `seedcode.openTerminal` and `seedcode.restart` focus the sidebar view. The editor tab is opened explicitly with `seedcode.openInEditor`.
 
-When you click **Install SeedCode**:
-1. The extension detects your operating system (Windows or Linux).
-2. It displays a secure confirmation prompt showing the exact command that will be executed.
-3. Upon confirmation, a dedicated Integrated Terminal named `SeedCode CLI` opens and executes the official script:
-   - **Windows**: Executes PowerShell download and installation pipeline.
-   - **Linux**: Executes Bash curl installation pipeline.
-4. The extension monitors the system for the appearance and operation of the `seedcode` executable.
-5. Once verified, SeedCode launches automatically, ready for you to code!
+## Configuration
 
----
+The extension does not contribute any settings yet. Everything that can be configured, including providers, models and API keys, stays in the CLI's own configuration files and is not touched by the extension.
 
-## Troubleshooting
-
-### `seedcode` command not found after installation (Windows)
-On Windows, newly modified environment variables (such as `PATH`) might not immediately be visible to terminals that were opened before the installation completed.
-- The extension automatically searches well-known installation directories (such as `C:\Program Files\SeedCode\seedcode.exe` or `%LOCALAPPDATA%\SeedCode\seedcode.exe`).
-- If this occurs, click **Check Installation** in the SeedCode sidebar or run `SeedCode: Check Installation` from the Command Palette.
-- You can also restart the terminal using `SeedCode: Restart CLI`.
-
-### No workspace folder open
-SeedCode works best when operating inside a project directory so it can read project files and generate code in context. If you launch SeedCode without an open folder, the extension prompts you to either open a workspace folder or proceed using your user home directory.
-
-### Checking Extension Logs
-If you encounter any issues, open the VS Code **Output** panel (`Ctrl+Shift+U` or `View → Output`) and select **SeedCode** from the drop-down menu to view diagnostic logs.
-
----
-
-## Development & Building
-
-To build the extension from source:
+## Development and Build Instructions
 
 ```bash
-# Clone the repository
-git clone https://github.com/Alshahriar-07/seedcode-vscode.git
-cd seedcode-vscode
-
-# Install dependencies
+# install dependencies
 npm install
 
-# Run automated tests
-npm test
-
-# Type-check TypeScript code
+# type-check the extension sources
 npm run typecheck
 
-# Build bundle with esbuild
+# run the test suite (bundles test/runTests.ts with esbuild and executes it)
+npm test
+
+# development bundle with sourcemaps
 npm run build
 
-# Package production VSIX
-npx @vscode/vsce package --no-dependencies
+# production bundle
+npm run package
 ```
 
----
+Layout:
 
-## Credits & License
+- `src/extension.ts` – activation, provider registration, command registration.
+- `src/providers/seedcodeViewProvider.ts` – Activity Bar webview view host.
+- `src/providers/seedcodeEditorPanel.ts` – editor tab webview panel host.
+- `src/providers/seedCodeWebviewHost.ts` – shared message handling, PTY forwarding and rendering used by both hosts.
+- `src/providers/seedCodeWebviewContent.ts` – the HTML/CSS for the terminal and setup screens.
+- `src/services/` – CLI detection, installation, platform detection, PTY session and legacy terminal helpers.
+- `src/commands/` – one file per command.
+- `media/` – xterm.js, the fit addon and `terminal.js`, which wires the webview to the extension.
+- `test/` – the test suite and a small `vscode` mock used by it.
 
-Created and maintained by **Al Shahriar Sowan**.
+The tests run outside VS Code against the bundled sources and the local machine, including a check that the CLI is detected and can be spawned. They assert the manifest contributions (Activity Bar container, view IDs, commands, menu entries), the webview panel behaviour and the shared UI markup.
 
-Released under the [MIT License](LICENSE).
+To debug, open the repository in VS Code and press `F5`. The Extension Development Host loads the extension from `dist/extension.js`, so run `npm run build` first (or `npm run watch` while editing).
+
+### Releasing
+
+1. Update `version` in `package.json` and add a matching entry to `CHANGELOG.md`.
+2. Run `npm run typecheck && npm test`.
+3. Run `npm run vscode:package`. This validates the manifest and writes `seedcode-vscode-<version>.vsix`.
+4. Check the package contents:
+   ```bash
+   unzip -l seedcode-vscode-2.1.4.vsix | grep -E "seedcode.svg|extension.js"
+   unzip -p seedcode-vscode-2.1.4.vsix extension/package.json | grep -A4 viewsContainers
+   ```
+
+## Known Limitations
+
+- The automated installer covers Windows and Linux. On macOS the CLI has to be installed manually.
+- The sidebar and the editor tab share one CLI process. Opening the second surface replays the current buffer and attaches to the same session; it does not start an independent session.
+- Only one editor tab is used. Running `Open in Editor Tab` while the tab is open reveals it.
+- Terminal size follows the surface that most recently reported a resize.
+- With multiple workspace folders, the CLI runs in the folder of the active editor, otherwise the first folder.
+- The extension does not expose settings and does not manage CLI configuration or credentials.
+- The webview does not forward every VS Code keybinding; shortcuts are handled by the CLI once the terminal has focus.
+
+## Author
+
+Al Shahriar Sowan
+
+- Repository: https://github.com/Alshahriar-07/seedcode-vscode
+- CLI: https://github.com/Alshahriar-07/seedcode-cli
+
+## License
+
+MIT. See [LICENSE](LICENSE).

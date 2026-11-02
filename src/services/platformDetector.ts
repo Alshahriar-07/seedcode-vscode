@@ -1,4 +1,5 @@
 import * as os from 'os';
+import * as process from 'process';
 
 export type SupportedPlatform = 'windows' | 'linux';
 export type PlatformType = SupportedPlatform | 'darwin' | 'other';

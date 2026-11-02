@@ -8,6 +8,13 @@ out/**
 tsconfig.json
 **/*.map
 dist/test.*
-node_modules/**
 *.vsix
 .DS_Store
+node_modules/**
+!node_modules/node-pty/**
+node_modules/node-pty/deps/**
+node_modules/node-pty/src/**
+node_modules/node-pty/third_party/**
+node_modules/node-pty/scripts/**
+**/*.pdb
+.verify/**

@@ -7,15 +7,15 @@ import { registerInstallCommand } from './commands/install';
 import { registerRestartCommand } from './commands/restart';
 import { registerCheckInstallationCommand } from './commands/checkInstallation';
 import { registerOpenTerminalCommand } from './commands/openTerminal';
-import { TerminalManager } from './services/terminalManager';
+import { registerOpenInEditorCommand } from './commands/openInEditor';
+import { PtySessionManager } from './services/ptySessionManager';
 import { InstallationManager } from './services/installationManager';
 
 export function activate(context: vscode.ExtensionContext): void {
-  // Initialize extension logger
   logger.initialize(context);
-  logger.info('SeedCode VS Code extension activated.');
+  logger.info('SeedCode CLI extension activated (Activity Bar sidebar + editor tab).');
 
-  // Register Webview View Provider in the Activity Bar
+  // Register Webview View Provider for the Activity Bar SeedCode container
   const provider = new SeedCodeViewProvider(context.extensionUri);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(SeedCodeViewProvider.viewType, provider, {
@@ -26,17 +26,18 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   context.subscriptions.push(provider);
 
-  // Register extension commands
+  // Register commands
   registerOpenCommand(context);
   registerLaunchCommand(context);
   registerInstallCommand(context);
   registerRestartCommand(context);
   registerCheckInstallationCommand(context);
   registerOpenTerminalCommand(context);
+  registerOpenInEditorCommand(context);
 }
 
 export function deactivate(): void {
   logger.info('SeedCode extension deactivating...');
-  TerminalManager.getInstance().dispose();
+  PtySessionManager.getInstance().dispose();
   InstallationManager.getInstance().dispose();
 }

@@ -22,9 +22,78 @@ export const workspace = {
   getWorkspaceFolder: () => undefined
 };
 
+export interface MockWebview {
+  options: any;
+  html: string;
+  posted: any[];
+  messageHandler?: (message: any) => void;
+  asWebviewUri(uri: any): string;
+  postMessage(message: any): Promise<boolean>;
+  onDidReceiveMessage(cb: (message: any) => void): { dispose: () => void };
+}
+
+export function createMockWebview(): MockWebview {
+  const webview: MockWebview = {
+    options: {},
+    html: '',
+    posted: [],
+    asWebviewUri: (uri: any) => `vscode-resource://${uri?.fsPath ?? 'resource'}`,
+    postMessage: async (message: any) => {
+      webview.posted.push(message);
+      return true;
+    },
+    onDidReceiveMessage: (cb: (message: any) => void) => {
+      webview.messageHandler = cb;
+      return { dispose: () => {} };
+    }
+  };
+  return webview;
+}
+
+export const mockPanels: any[] = [];
+
+export const ViewColumn = {
+  Active: -1,
+  Beside: -2,
+  One: 1
+};
+
 export const window = {
   activeTextEditor: undefined,
   terminals: mockTerminals,
+  createWebviewPanel: (viewType: string, title: string, _column?: any, _options?: any) => {
+    const webview = createMockWebview();
+    const panel: any = {
+      viewType,
+      title,
+      webview,
+      iconPath: undefined,
+      revealed: 0,
+      disposed: false,
+      onDidDispose: (cb: () => void) => {
+        panel.disposeHandler = cb;
+        return { dispose: () => {} };
+      },
+      reveal: () => {
+        panel.revealed += 1;
+      },
+      dispose: () => {
+        if (panel.disposed) {
+          return;
+        }
+        panel.disposed = true;
+        if (panel.disposeHandler) {
+          panel.disposeHandler();
+        }
+        const idx = mockPanels.indexOf(panel);
+        if (idx !== -1) {
+          mockPanels.splice(idx, 1);
+        }
+      }
+    };
+    mockPanels.push(panel);
+    return panel;
+  },
   createTerminal: (options: { name: string; cwd?: string; iconPath?: any }) => {
     const term: MockTerminal = {
       name: options.name,
@@ -52,6 +121,10 @@ export const window = {
   showInformationMessage: async () => 'Install SeedCode',
   showWarningMessage: async () => undefined,
   showErrorMessage: async () => undefined
+};
+
+export const env = {
+  openExternal: async () => true
 };
 
 export const commands = {

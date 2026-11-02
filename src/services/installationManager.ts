@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
+import * as process from 'process';
+import { spawn } from 'child_process';
 import { PlatformDetector, PlatformInfo } from './platformDetector';
 import { CliDetector, CliDetectionResult } from './cliDetector';
-import { TerminalManager } from './terminalManager';
 import { logger } from '../utils/logger';
 
 export type InstallationState =
@@ -34,7 +35,9 @@ export class InstallationManager {
     this.currentStatus = {
       state: platform.isSupported ? 'checking' : 'unsupported',
       platform,
-      message: platform.isSupported ? 'Checking SeedCode CLI installation...' : `Operating system ${platform.name} is currently not supported for automated CLI installation.`
+      message: platform.isSupported
+        ? 'Checking SeedCode CLI installation...'
+        : `Operating system ${platform.name} is currently not supported for automated CLI installation.`
     };
   }
 
@@ -86,7 +89,7 @@ export class InstallationManager {
         this.updateStatus({
           state: 'installed',
           cliResult,
-          message: `SeedCode CLI is installed and ready (${cliResult.version || 'Version detected'}).`,
+          message: `SeedCode CLI is ready (${cliResult.version || 'Version detected'}).`,
           error: undefined
         });
       } else {
@@ -111,9 +114,7 @@ export class InstallationManager {
   }
 
   /**
-   * Starts the installation workflow.
-   * Prompts the user for security confirmation, runs the script in the integrated terminal,
-   * and polls until the CLI is operational.
+   * Runs the installation workflow directly inside the right sidebar environment.
    */
   public async install(): Promise<boolean> {
     const platform = PlatformDetector.getPlatformInfo();
@@ -130,7 +131,7 @@ export class InstallationManager {
       return false;
     }
 
-    // Security confirmation prompt (Requirement 7 & 13)
+    // Security confirmation prompt
     const confirmation = await vscode.window.showInformationMessage(
       `SeedCode CLI will be installed for ${platform.name} using the official installer:\n\n${platform.installCommand}\n\nDo you want to proceed?`,
       { modal: true },
@@ -145,39 +146,80 @@ export class InstallationManager {
 
     this.updateStatus({
       state: 'installing',
-      message: 'Installing SeedCode CLI... Check the integrated terminal for live progress.'
+      message: 'Installing SeedCode CLI... Please wait while the installer configures your environment.'
     });
 
     try {
-      const terminalMgr = TerminalManager.getInstance();
-      const { terminal } = terminalMgr.getOrCreateTerminal();
-      terminal.show();
+      const isWin = PlatformDetector.isWindows();
+      const shell = isWin ? 'powershell.exe' : 'bash';
+      const shellArgs = isWin
+        ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', platform.installCommand]
+        : ['-c', platform.installCommand];
 
-      logger.info(`Running installer command: ${platform.installCommand}`);
-      terminal.sendText(platform.installCommand);
+      logger.info(`Running installer: ${shell} ${shellArgs.join(' ')}`);
 
-      vscode.window.showInformationMessage(
-        'SeedCode CLI installation started in the Integrated Terminal. The extension will automatically verify and launch when ready.'
-      );
+      const child = spawn(shell, shellArgs, {
+        windowsHide: true,
+        env: process.env
+      });
 
-      // Start verifying installation asynchronously
-      this.monitorInstallation();
+      child.stdout.on('data', (chunk) => {
+        logger.info(`[Installer]: ${chunk.toString().trim()}`);
+      });
+
+      child.stderr.on('data', (chunk) => {
+        logger.warn(`[Installer Warning]: ${chunk.toString().trim()}`);
+      });
+
+      child.on('error', (err) => {
+        logger.error('Installer execution error', err);
+        this.updateStatus({
+          state: 'failed',
+          message: 'Failed to start installation process.',
+          error: err.message
+        });
+      });
+
+      child.on('close', async (code) => {
+        logger.info(`Installer process completed with exit code: ${code}`);
+        if (code === 0) {
+          // Re-verify CLI presence
+          CliDetector.invalidateCache();
+          const cliResult = await CliDetector.detect(true);
+
+          if (cliResult.installed) {
+            this.updateStatus({
+              state: 'installed',
+              cliResult,
+              message: 'SeedCode CLI installed successfully!'
+            });
+            vscode.window.showInformationMessage('SeedCode CLI installed successfully! Initializing terminal...');
+          } else {
+            // Give system time for PATH propagation
+            this.monitorInstallation();
+          }
+        } else {
+          this.updateStatus({
+            state: 'failed',
+            message: `Installation script exited with code ${code}. Check SeedCode extension output logs for details.`,
+            error: `Process exit code: ${code}`
+          });
+        }
+      });
+
       return true;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      logger.error('Failed to launch installation in terminal', err);
+      logger.error('Failed to run installer', err);
       this.updateStatus({
         state: 'failed',
-        message: 'Failed to run installer in the Integrated Terminal.',
+        message: 'Failed to launch installer.',
         error: msg
       });
       return false;
     }
   }
 
-  /**
-   * Periodically checks if the CLI has become available after running the installer.
-   */
   private monitorInstallation(): void {
     if (this.isPolling) {
       return;
@@ -190,8 +232,8 @@ export class InstallationManager {
     };
 
     const startTime = Date.now();
-    const timeoutMs = 180000; // 3 minutes timeout
-    const intervalMs = 3000;  // Poll every 3 seconds
+    const timeoutMs = 90000; // 90 seconds
+    const intervalMs = 3000;
 
     const poll = async () => {
       if (cancelled) {
@@ -210,13 +252,7 @@ export class InstallationManager {
           cliResult,
           message: 'SeedCode CLI installed successfully!'
         });
-
-        vscode.window.showInformationMessage(
-          `SeedCode CLI installed successfully! (${cliResult.version || 'Ready'}) Launching CLI...`
-        );
-
-        // Automatically launch SeedCode CLI upon successful installation
-        TerminalManager.getInstance().launchCli();
+        vscode.window.showInformationMessage('SeedCode CLI detected! Initializing embedded terminal...');
         return;
       }
 
@@ -225,21 +261,16 @@ export class InstallationManager {
         this.pollCancellation = null;
         this.updateStatus({
           state: 'failed',
-          message: 'Installation timed out. Please check the terminal output for details or try again.',
-          error: 'Process exceeded timeout limit without detecting seedcode executable.'
+          message: 'Installation verification timed out. Click "Recheck Status" or restart VS Code.',
+          error: 'Verification timeout limit reached without detecting seedcode executable.'
         });
-        vscode.window.showWarningMessage(
-          'SeedCode CLI installation timed out. If the installation completed in terminal, click "Check Installation" or reopen the terminal.'
-        );
         return;
       }
 
-      // Schedule next poll
       setTimeout(poll, intervalMs);
     };
 
-    // First check after 5 seconds to give installer time to start
-    setTimeout(poll, 5000);
+    setTimeout(poll, 3000);
   }
 
   public cancelMonitoring(): void {

@@ -2,6 +2,7 @@ import { execFile } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import * as process from 'process';
 import { logger } from '../utils/logger';
 import { PlatformDetector } from './platformDetector';
 import { PathResolver } from '../utils/paths';

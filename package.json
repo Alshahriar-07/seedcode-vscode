@@ -1,8 +1,8 @@
 {
   "name": "seedcode",
-  "displayName": "SeedCode",
-  "description": "Your AI coding agent, built for the terminal.",
-  "version": "1.0.0",
+  "displayName": "SeedCode CLI",
+  "description": "Run the SeedCode CLI AI coding agent in a dedicated Activity Bar sidebar or an editor tab.",
+  "version": "2.1.4",
   "publisher": "alshahriar",
   "author": {
     "name": "Al Shahriar Sowan"
@@ -31,8 +31,9 @@
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onView:seedcode.view",
+    "onView:seedcode.cliView",
     "onCommand:seedcode.open",
+    "onCommand:seedcode.openInEditor",
     "onCommand:seedcode.launch",
     "onCommand:seedcode.install",
     "onCommand:seedcode.checkInstallation",
@@ -43,17 +44,17 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "seedcode-sidebar",
+          "id": "seedcode",
           "title": "SeedCode",
           "icon": "assets/seedcode.svg"
         }
       ]
     },
     "views": {
-      "seedcode-sidebar": [
+      "seedcode": [
         {
           "type": "webview",
-          "id": "seedcode.view",
+          "id": "seedcode.cliView",
           "name": "SeedCode CLI"
         }
       ]
@@ -61,61 +62,79 @@
     "commands": [
       {
         "command": "seedcode.open",
-        "title": "Open",
-        "category": "SeedCode"
+        "title": "Open in Sidebar",
+        "category": "SeedCode CLI"
+      },
+      {
+        "command": "seedcode.openInEditor",
+        "title": "Open in Editor Tab",
+        "category": "SeedCode CLI",
+        "icon": {
+          "light": "assets/seedcode-colored-with-bg.svg",
+          "dark": "assets/seedcode-colored-with-bg.svg"
+        }
       },
       {
         "command": "seedcode.launch",
         "title": "Launch CLI",
-        "category": "SeedCode",
+        "category": "SeedCode CLI",
         "icon": "$(play)"
       },
       {
         "command": "seedcode.install",
         "title": "Install CLI",
-        "category": "SeedCode",
+        "category": "SeedCode CLI",
         "icon": "$(cloud-download)"
       },
       {
         "command": "seedcode.checkInstallation",
         "title": "Check Installation",
-        "category": "SeedCode",
+        "category": "SeedCode CLI",
         "icon": "$(sync)"
       },
       {
         "command": "seedcode.restart",
         "title": "Restart CLI",
-        "category": "SeedCode",
+        "category": "SeedCode CLI",
         "icon": "$(refresh)"
       },
       {
         "command": "seedcode.openTerminal",
-        "title": "Open Terminal",
-        "category": "SeedCode",
-        "icon": "$(terminal)"
+        "title": "Focus Sidebar",
+        "category": "SeedCode CLI",
+        "icon": "$(layout-sidebar-left)"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "seedcode.launch",
-          "when": "view == seedcode.view",
-          "group": "navigation@1"
+          "command": "seedcode.openInEditor",
+          "when": "view == seedcode.cliView",
+          "group": "navigation@0"
         },
         {
           "command": "seedcode.restart",
-          "when": "view == seedcode.view",
-          "group": "navigation@2"
+          "when": "view == seedcode.cliView",
+          "group": "navigation@1"
         },
         {
           "command": "seedcode.checkInstallation",
-          "when": "view == seedcode.view",
-          "group": "navigation@3"
+          "when": "view == seedcode.cliView",
+          "group": "navigation@2"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "seedcode.openInEditor",
+          "group": "navigation@1"
         }
       ],
       "commandPalette": [
         {
           "command": "seedcode.open"
+        },
+        {
+          "command": "seedcode.openInEditor"
         },
         {
           "command": "seedcode.launch"
@@ -139,22 +158,22 @@
     "vscode:prepublish": "npm run package",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
-    "package": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
-    "test": "npx esbuild ./test/runTests.ts --bundle --outfile=dist/test.js --alias:vscode=./test/mockVscode.ts --format=cjs --platform=node && node dist/test.js",
+    "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --external:node-pty --format=cjs --platform=node --sourcemap",
+    "package": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --external:node-pty --format=cjs --platform=node --minify",
+    "test": "npx esbuild ./test/runTests.ts --bundle --outfile=dist/test.js --alias:vscode=./test/mockVscode.ts --external:node-pty --format=cjs --platform=node && node dist/test.js",
     "typecheck": "tsc --noEmit",
-    "vscode:package": "vsce package --no-dependencies"
+    "vscode:package": "vsce package -o seedcode-vscode-2.1.4.vsix"
+  },
+  "dependencies": {
+    "node-pty": "^1.0.2"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.80.0",
     "@vscode/vsce": "^2.24.0",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
     "esbuild": "^0.21.5",
     "typescript": "^5.4.5"
-  },
-  "dependencies": {
-    "@xterm/addon-fit": "^0.11.0",
-    "@xterm/xterm": "^6.0.0",
-    "node-pty": "^1.1.0"
   }
 }
