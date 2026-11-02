@@ -1,0 +1,160 @@
+{
+  "name": "seedcode",
+  "displayName": "SeedCode",
+  "description": "Your AI coding agent, built for the terminal.",
+  "version": "1.0.0",
+  "publisher": "alshahriar",
+  "author": {
+    "name": "Al Shahriar Sowan"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Alshahriar-07/seedcode-vscode"
+  },
+  "icon": "assets/logo.png",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "AI",
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "seedcode",
+    "ai",
+    "agent",
+    "coding agent",
+    "terminal",
+    "assistant"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onView:seedcode.view",
+    "onCommand:seedcode.open",
+    "onCommand:seedcode.launch",
+    "onCommand:seedcode.install",
+    "onCommand:seedcode.checkInstallation",
+    "onCommand:seedcode.restart",
+    "onCommand:seedcode.openTerminal"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "seedcode-sidebar",
+          "title": "SeedCode",
+          "icon": "assets/seedcode.svg"
+        }
+      ]
+    },
+    "views": {
+      "seedcode-sidebar": [
+        {
+          "type": "webview",
+          "id": "seedcode.view",
+          "name": "SeedCode CLI"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "seedcode.open",
+        "title": "Open",
+        "category": "SeedCode"
+      },
+      {
+        "command": "seedcode.launch",
+        "title": "Launch CLI",
+        "category": "SeedCode",
+        "icon": "$(play)"
+      },
+      {
+        "command": "seedcode.install",
+        "title": "Install CLI",
+        "category": "SeedCode",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "seedcode.checkInstallation",
+        "title": "Check Installation",
+        "category": "SeedCode",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "seedcode.restart",
+        "title": "Restart CLI",
+        "category": "SeedCode",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "seedcode.openTerminal",
+        "title": "Open Terminal",
+        "category": "SeedCode",
+        "icon": "$(terminal)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "seedcode.launch",
+          "when": "view == seedcode.view",
+          "group": "navigation@1"
+        },
+        {
+          "command": "seedcode.restart",
+          "when": "view == seedcode.view",
+          "group": "navigation@2"
+        },
+        {
+          "command": "seedcode.checkInstallation",
+          "when": "view == seedcode.view",
+          "group": "navigation@3"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "seedcode.open"
+        },
+        {
+          "command": "seedcode.launch"
+        },
+        {
+          "command": "seedcode.install"
+        },
+        {
+          "command": "seedcode.checkInstallation"
+        },
+        {
+          "command": "seedcode.restart"
+        },
+        {
+          "command": "seedcode.openTerminal"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "package": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "test": "npx esbuild ./test/runTests.ts --bundle --outfile=dist/test.js --alias:vscode=./test/mockVscode.ts --format=cjs --platform=node && node dist/test.js",
+    "typecheck": "tsc --noEmit",
+    "vscode:package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^2.24.0",
+    "esbuild": "^0.21.5",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "node-pty": "^1.1.0"
+  }
+}
